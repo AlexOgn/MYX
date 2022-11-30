@@ -9,7 +9,7 @@ node .
 ```
 
 # How to test
-## Personally used Postman, works with anything
+Personally used Postman, works with anything
 
 # Documentation
 [Swagger Endpoint Documentation](https://app.swaggerhub.com/apis/AlexOgn/myx/1.0.0)
