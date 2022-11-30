@@ -2,9 +2,11 @@
 Nqmah kakvo da pravq
 
 # How to install
-`git clone https://github.com/AlexOgn/MYX.git`  
-`npm install`  
-`node .`  
+```
+git clone https://github.com/AlexOgn/MYX.git
+npm install
+node .
+```
 
 # How to test
 ## Personally used Postman, works with anything
