@@ -147,17 +147,11 @@ app.get("/box", async function (req, res) {
                 if (error) {
                     console.log("Error: " + error.message);
                 } else {
-                    let latdeg = exifData.gps.GPSLatitude[0];
-                    let latmin = exifData.gps.GPSLatitude[1];
-                    let latsec = exifData.gps.GPSLatitude[2];
+                    let lat = exifData.gps.GPSLatitude;
+                    let latDecimal = lat[0] + lat[1] / 60 + lat[2] / 3600;
 
-                    let latDecimal = latdeg + latmin / 60 + latsec / 3600;
-
-                    let londeg = exifData.gps.GPSLongitude[0];
-                    let lonmin = exifData.gps.GPSLongitude[1];
-                    let lonsec = exifData.gps.GPSLongitude[2];
-
-                    let lonDecimal = londeg + lonmin / 60 + lonsec / 3600;
+                    let lon = exifData.gps.GPSLongitude;
+                    let lonDecimal = lon[0] + lon[1] / 60 + lon[2] / 3600;
 
                     if (exifData.gps.GPSLatitudeRef == "S") {
                         latDecimal = -latDecimal;
