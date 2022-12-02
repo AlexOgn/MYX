@@ -12,4 +12,4 @@ node .
 Personally used Postman, works with anything
 
 # Documentation
-[Swagger Endpoint Documentation](https://app.swaggerhub.com/apis/AlexOgn/myx/1.0.0)
+[Swagger Endpoint Documentation](https://app.swaggerhub.com/apis/AlexOgn/myx/1.1.0)
