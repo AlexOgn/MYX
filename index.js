@@ -140,8 +140,6 @@ app.delete("/deleteImage", function (req, res) {
         return res.sendStatus(404);
     }
 
-
-
     res.sendStatus(200);
 });
 
