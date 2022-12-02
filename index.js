@@ -55,6 +55,15 @@ function toDecimal(coords, ref) {
     return decimal_degrees;
 }
 
+function deleteImage(path) {
+    fs.unlink(path, (err) => {
+        if (err) {
+            res.sendStatus(400);
+            throw err;
+        }
+    });
+}
+
 app.post("/uploadImage", function (req, res) {
     const { image } = req.files;
 
@@ -83,47 +92,23 @@ app.get("/getImage", async function (req, res) {
     return res.sendFile(imagePath);
 });
 
-app.delete("/deleteImage", function (req, res) {
-    let imageName = req.query.image;
-    let imagePath = `${UPLOAD}${imageName}`;
-    let thumbnailPath = `${UPLOAD}_${imageName}`;
-
-    if (imageExists(thumbnailPath)) {
-        fs.unlink(thumbnailPath, (err) => {
-            if (err) {
-                res.sendStatus(400);
-                throw err;
-            }
-        });
-    }
-
-    if (imageExists(imagePath)) {
-        fs.unlink(imagePath, (err) => {
-            if (err) {
-                res.sendStatus(400);
-                throw err;
-            }
-        });
-    } else {
-        return res.sendStatus(404);
-    }
-
-
-
-    res.sendStatus(200);
-});
-
 app.get("/getThumbnail", async function (req, res) {
     let imageName = req.query.image;
     let imagePath = `${UPLOAD}${imageName}`;
     let thumbnailPath = `${UPLOAD}_${imageName}`;
+
+    let deleteAfter = req.query.delete == "true" ? true : false;
 
     if (!imageExists(imagePath)) {
         return res.sendStatus(404);
     }
 
     if (imageExists(thumbnailPath)) {
-        return res.sendFile(thumbnailPath);
+        return res.sendFile(thumbnailPath, () => {
+            if (deleteAfter) {
+                return deleteImage(thumbnailPath);
+            }
+        });
     }
 
     await sharp(imagePath)
@@ -133,7 +118,31 @@ app.get("/getThumbnail", async function (req, res) {
             console.log("Error occured: " + err);
         });
 
-    res.sendFile(thumbnailPath);
+    return res.sendFile(thumbnailPath, () => {
+        if (deleteAfter) {
+            return deleteImage(thumbnailPath);
+        }
+    });
+});
+
+app.delete("/deleteImage", function (req, res) {
+    let imageName = req.query.image;
+    let imagePath = `${UPLOAD}${imageName}`;
+    let thumbnailPath = `${UPLOAD}_${imageName}`;
+
+    if (imageExists(thumbnailPath)) {
+        deleteImage(thumbnailPath)
+    }
+
+    if (imageExists(imagePath)) {
+        deleteImage(thumbnailPath)
+    } else {
+        return res.sendStatus(404);
+    }
+
+
+
+    res.sendStatus(200);
 });
 
 app.get("/box", async function (req, res) {
