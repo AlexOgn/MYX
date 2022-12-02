@@ -88,6 +88,15 @@ app.delete("/deleteImage", function (req, res) {
     let imagePath = `${UPLOAD}${imageName}`;
     let thumbnailPath = `${UPLOAD}_${imageName}`;
 
+    if (imageExists(thumbnailPath)) {
+        fs.unlink(thumbnailPath, (err) => {
+            if (err) {
+                res.sendStatus(400);
+                throw err;
+            }
+        });
+    }
+
     if (imageExists(imagePath)) {
         fs.unlink(imagePath, (err) => {
             if (err) {
@@ -99,14 +108,7 @@ app.delete("/deleteImage", function (req, res) {
         return res.sendStatus(404);
     }
 
-    if (imageExists(thumbnailPath)) {
-        fs.unlink(thumbnailPath, (err) => {
-            if (err) {
-                res.sendStatus(400);
-                throw err;
-            }
-        });
-    }
+
 
     res.sendStatus(200);
 });
