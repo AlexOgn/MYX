@@ -58,8 +58,7 @@ function toDecimal(coords, ref) {
 function deleteImage(path) {
     fs.unlink(path, (err) => {
         if (err) {
-            res.sendStatus(400);
-            throw err;
+            return -1;
         }
     });
 }
@@ -106,7 +105,9 @@ app.get("/getThumbnail", async function (req, res) {
     if (imageExists(thumbnailPath)) {
         return res.sendFile(thumbnailPath, () => {
             if (deleteAfter) {
-                return deleteImage(thumbnailPath);
+                if (deleteImage(thumbnailPath) == -1) {
+                    console.log("cannot delete file");
+                }
             }
         });
     }
@@ -130,12 +131,19 @@ app.delete("/deleteImage", function (req, res) {
     let imagePath = `${UPLOAD}${imageName}`;
     let thumbnailPath = `${UPLOAD}_${imageName}`;
 
-    if (imageExists(thumbnailPath)) {
-        deleteImage(thumbnailPath)
+    //dali da iztriva i thumbnail-a, ako vuobshte sushtestvuva
+    let deleteThumbnail = req.query.deleteThumbnail == "false" ? false : true;
+
+    if (deleteThumbnail && imageExists(thumbnailPath)) {
+        if (deleteImage(thumbnailPath) == -1) {
+            console.log("Could not delete thumbnail");
+        }
     }
 
     if (imageExists(imagePath)) {
-        deleteImage(thumbnailPath)
+        if (deleteImage(imagePath) == -1) {
+            console.log("Could not delete image");
+        }
     } else {
         return res.sendStatus(404);
     }
