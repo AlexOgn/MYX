@@ -12,11 +12,13 @@ const port = 3000;
 
 const sharp = require("sharp");
 
+const UPLOAD = `${__dirname}/upload/`
+
 app.use(cors());
 app.use(
     fileUpload({
         limits: {
-            fileSize: 100000000, // Around 100MB
+            fileSize: 100000000,
         },
         abortOnLimit: true,
     })
@@ -44,22 +46,31 @@ function isInBox(point, box) {
     );
 }
 
+function toDecimal(coords, ref) {
+    let decimal_degrees = coords[0] + coords[1] / 60 + coords[2] / 3600;
+    if (ref == "S" || ref == "W") {
+        decimal_degrees = -decimal_degrees;
+    }
+
+    return decimal_degrees;
+}
+
 app.post("/uploadImage", function (req, res) {
     const { image } = req.files;
 
     if (!image) return res.sendStatus(400);
-    if (imageExists(`${__dirname}/upload/${image.name}`)) {
+    if (imageExists(`${UPLOAD}${image.name}`)) {
         return res.sendStatus(400);
     }
 
-    image.mv(__dirname + "/upload/" + image.name);
+    image.mv(UPLOAD + image.name);
 
     res.sendStatus(200);
 });
 
 app.get("/getImage", async function (req, res) {
     let imageName = req.query.image;
-    let imagePath = `${__dirname}/upload/${imageName}`;
+    let imagePath = `${UPLOAD}${imageName}`;
 
     try {
         if (!imageExists(imagePath)) {
@@ -74,8 +85,8 @@ app.get("/getImage", async function (req, res) {
 
 app.delete("/deleteImage", function (req, res) {
     let imageName = req.query.image;
-    let imagePath = `${__dirname}/upload/${imageName}`;
-    let thumbnailPath = `${__dirname}/upload/_${imageName}`;
+    let imagePath = `${UPLOAD}${imageName}`;
+    let thumbnailPath = `${UPLOAD}_${imageName}`;
 
     if (imageExists(imagePath)) {
         fs.unlink(imagePath, (err) => {
@@ -102,8 +113,8 @@ app.delete("/deleteImage", function (req, res) {
 
 app.get("/getThumbnail", async function (req, res) {
     let imageName = req.query.image;
-    let imagePath = `${__dirname}/upload/${imageName}`;
-    let thumbnailPath = `${__dirname}/upload/_${imageName}`;
+    let imagePath = `${UPLOAD}${imageName}`;
+    let thumbnailPath = `${UPLOAD}_${imageName}`;
 
     if (!imageExists(imagePath)) {
         return res.sendStatus(404);
@@ -117,7 +128,7 @@ app.get("/getThumbnail", async function (req, res) {
         .resize({ height: 256, width: 256 })
         .toFile(thumbnailPath)
         .catch(function (err) {
-            console.log("Error occured");
+            console.log("Error occured: " + err);
         });
 
     res.sendFile(thumbnailPath);
@@ -130,7 +141,7 @@ app.get("/box", async function (req, res) {
 
     let images = [];
 
-    let files = fs.readdirSync(`${__dirname}/upload`);
+    let files = fs.readdirSync(UPLOAD);
 
     for (let i = 0; i < files.length; i++) {
         let file = files[i];
@@ -140,34 +151,19 @@ app.get("/box", async function (req, res) {
         }
 
         let promise = await new Promise((resolve) => {
-            new ExifImage({ image: `${__dirname}/upload/${file}` }, function (
-                error,
-                exifData
-            ) {
+            new ExifImage({ image: `${UPLOAD}${file}` }, function (error, exifData) {
                 if (error) {
                     console.log("Error: " + error.message);
                 } else {
-                    let lat = exifData.gps.GPSLatitude;
-                    let latDecimal = lat[0] + lat[1] / 60 + lat[2] / 3600;
+                    //tuka vsichko pochna da prilicha vse edno go e pisal jiv chovek
+                    let gps = exifData.gps;
 
-                    let lon = exifData.gps.GPSLongitude;
-                    let lonDecimal = lon[0] + lon[1] / 60 + lon[2] / 3600;
+                    let point = {
+                        lat: toDecimal(gps.GPSLatitude, gps.GPSLatitudeRef),
+                        lon: toDecimal(gps.GPSLongitude, gps.GPSLongitudeRef)
+                    };
 
-                    if (exifData.gps.GPSLatitudeRef == "S") {
-                        latDecimal = -latDecimal;
-                    }
-
-                    if (exifData.gps.GPSLongitudeRef == "W") {
-                        lonDecimal = -lonDecimal;
-                    }
-
-                    let point = { lat: latDecimal, lon: lonDecimal };
-
-                    if (isInBox(point, box)) {
-                        resolve(true);
-                    } else {
-                        resolve(false);
-                    }
+                    resolve(isInBox(point, box));
                 }
             });
         });
